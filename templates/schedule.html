@@ -1,0 +1,21 @@
+{{define "schedule"}}<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>{{.Title}}</title>
+    <meta content="text/html; charset=UTF-8" http-equiv="content-type"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="list-group">
+	{{range .Series}}{{template "schedule-show-group" .}}{{end}}
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+  </body>
+</html>
+{{end}}

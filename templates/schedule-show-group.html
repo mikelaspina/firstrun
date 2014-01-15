@@ -1,0 +1,22 @@
+{{define "schedule-show-group"}}
+<div class="list-group-item">
+  <h4 class="list-group-item-heading">{{.Title}} {{if .ShowBadge}}<span class="badge">{{.BadgeCount}}</span>{{end}}</h4>
+  <div class="media">
+    <span class="pull-left">
+      <img class="media-object" src="images/holder.png" alt="{{.Title}}"></span>
+    <div class="media-body">
+      <table class="table">
+	<thead>
+	  <tr><td>Type</td><td>Title</td><td>Air Date</td><td>Actions</td></tr>
+	</thead>
+	<tbody>
+	  {{range .Episodes}}
+	  <tr><td>{{.Type}}</td><td>{{.Title}}</td><td>{{.AirDate}}</td>
+	    <td><span class="glyphicon glyphicon-remove"></span></td></tr>
+	  {{end}}
+	<tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{{end}}
