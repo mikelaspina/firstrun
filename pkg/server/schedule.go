@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/mikelaspina/firstrun/pkg/tv"
@@ -95,11 +96,33 @@ type indexGroupItem struct {
 	AirDate string
 }
 
+type airDateSorter struct {
+	Episodes []*tv.Episode
+}
+
+func (self airDateSorter) Len() int {
+	return len(self.Episodes)
+}
+
+func (self airDateSorter) Less(i, j int) bool {
+	return self.Episodes[i].AirDate.Before(self.Episodes[j].AirDate)
+}
+
+func (self airDateSorter) Swap(i, j int) {
+	self.Episodes[i], self.Episodes[j] = self.Episodes[j], self.Episodes[i]
+}
+
+func byDate(eps []*tv.Episode) []*tv.Episode {
+	s := airDateSorter{eps}
+	sort.Sort(s)
+	return s.Episodes
+}
+
 func (self *ScheduleHandler) index(w http.ResponseWriter, r *http.Request) {
 	page := indexPage{Title: "TV Schedule"}
 	for series, eps := range groupBySeries(self.sched.Episodes) {
 		group := indexGroup{Title: series}
-		for _, ep := range eps {
+		for _, ep := range byDate(eps) {
 			item := indexGroupItem{
 				Type:    fmt.Sprintf("S%d : Ep. %d", ep.Season, ep.Number),
 				Title:   ep.Title,
