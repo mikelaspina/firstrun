@@ -2,6 +2,22 @@
  *
  */
 
-.schedule-episode-type {
-  width: 8em;
+td.episode-type {
+  width: 96px;
+}
+
+td.episode-date {
+  width: 96px;
+}
+
+td.episode-title {
+  width: 633px;
+}
+
+tbody tr td.episode-title {
+  font-weight: bold;
+}
+
+td.episode-actions {
+  width: 100px;
 }
