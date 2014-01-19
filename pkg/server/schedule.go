@@ -49,6 +49,7 @@ func (self *ScheduleHandler) Init() error {
 	var err error
 
 	self.t, err = template.ParseFiles(
+		"templates/upcoming.html",
 		"templates/schedule.html",
 		"templates/schedule-show-group.html")
 	if err != nil {
@@ -75,7 +76,12 @@ func (h *ScheduleHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.index(w, r)
+	switch r.URL.Path {
+	case "/upcoming":
+		h.upcoming(w, r)
+	default:
+		h.index(w, r)
+	}
 }
 
 type indexPage struct {
@@ -123,7 +129,7 @@ func (self *ScheduleHandler) index(w http.ResponseWriter, r *http.Request) {
 	for series, eps := range groupBySeries(self.sched.Episodes) {
 		group := indexGroup{
 			Title:      series,
-			Episodes:   unwatched(eps, 3),
+			Episodes:   unwatched(eps, 0),
 			BadgeCount: badges(eps),
 		}
 
@@ -139,12 +145,49 @@ func (self *ScheduleHandler) index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (self *ScheduleHandler) upcoming(w http.ResponseWriter, r *http.Request) {
+	page := indexPage{Title: "Upcoming Episodes"}
+	for series, eps := range groupBySeries(self.sched.Episodes) {
+		group := indexGroup{
+			Title:      series,
+			Episodes:   filterUpcoming(eps),
+		}
+
+		if group.BadgeCount > 0 {
+			group.ShowBadge = true
+		}
+
+		page.Series = append(page.Series, group)
+	}
+
+	if err := self.t.ExecuteTemplate(w, "upcoming", page); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
 func groupBySeries(eps []*tv.Episode) map[string][]*tv.Episode {
 	groups := make(map[string][]*tv.Episode)
 	for _, ep := range eps {
 		groups[ep.Series] = append(groups[ep.Series], ep)
 	}
 	return groups
+}
+
+func filterUpcoming(eps []*tv.Episode) []indexGroupItem {
+	items := make([]indexGroupItem, 0)
+	cutoff :=  today()
+	
+	for _, ep := range byDate(eps) {
+		if ep.AirDate.After(cutoff) {
+			items = append(items, indexGroupItem{
+				Type:    fmt.Sprintf("S%d : Ep. %d", ep.Season, ep.Number),
+				Title:   ep.Title,
+				AirDate: ep.AirDate.Format("01/02/2006"),
+			})
+		}
+	}
+
+	return items
 }
 
 func unwatched(eps []*tv.Episode, maxUpcoming int) []indexGroupItem {
