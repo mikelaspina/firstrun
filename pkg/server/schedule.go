@@ -129,7 +129,7 @@ func (self *ScheduleHandler) index(w http.ResponseWriter, r *http.Request) {
 	for series, eps := range groupBySeries(self.sched.Episodes) {
 		group := indexGroup{
 			Title:      series,
-			Episodes:   unwatched(eps, 3),
+			Episodes:   unwatched(eps, 0),
 			BadgeCount: badges(eps),
 		}
 
