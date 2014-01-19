@@ -9,7 +9,7 @@
     <link href="css/firstrun.css" rel="stylesheet">
   </head>
 
-  <body style="padding-top: 70px;">
+  <body style="padding-top: 30px;">
     <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
       <div class="navbar-header">
         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -23,13 +23,15 @@
 
       <div class="navbar-collapse collapse">
         <ul class="nav navbar-nav">
-	  <li class="active"><a href="#">Queue</a></li>
+	  <li class="active"><a href="/queue">Queue</a></li>
 	  <li><a href="/upcoming">Upcoming</a></li>
 	</ul>
       </div>
     </nav>
 
     <div class="container">
+      <div class="page-header"><h1>Unwatched Episodes</h1></div>
+
       <div class="list-group">
 	{{range .Series}}{{template "schedule-show-group" .}}{{end}}
       </div>
