@@ -121,19 +121,16 @@ func byDate(eps []*tv.Episode) []*tv.Episode {
 func (self *ScheduleHandler) index(w http.ResponseWriter, r *http.Request) {
 	page := indexPage{Title: "TV Schedule"}
 	for series, eps := range groupBySeries(self.sched.Episodes) {
-		group := indexGroup{Title: series}
-		for _, ep := range byDate(eps) {
-			item := indexGroupItem{
-				Type:    fmt.Sprintf("S%d : Ep. %d", ep.Season, ep.Number),
-				Title:   ep.Title,
-				AirDate: ep.AirDate.Format("01/02/2006"),
-			}
-			group.Episodes = append(group.Episodes, item)
+		group := indexGroup{
+			Title:      series,
+			Episodes:   unwatched(eps, 3),
+			BadgeCount: badges(eps),
 		}
-		group.BadgeCount = badges(eps)
+
 		if group.BadgeCount > 0 {
 			group.ShowBadge = true
 		}
+
 		page.Series = append(page.Series, group)
 	}
 
@@ -148,6 +145,28 @@ func groupBySeries(eps []*tv.Episode) map[string][]*tv.Episode {
 		groups[ep.Series] = append(groups[ep.Series], ep)
 	}
 	return groups
+}
+
+func unwatched(eps []*tv.Episode, maxUpcoming int) []indexGroupItem {
+	items := make([]indexGroupItem, 0)
+	cutoff := today()
+	upcoming := 0
+	for _, ep := range byDate(eps) {
+		if ep.AirDate.After(cutoff) {
+			if upcoming >= maxUpcoming {
+				break
+			}
+			upcoming += 1
+		}
+
+		items = append(items, indexGroupItem{
+			Type:    fmt.Sprintf("S%d : Ep. %d", ep.Season, ep.Number),
+			Title:   ep.Title,
+			AirDate: ep.AirDate.Format("01/02/2006"),
+		})
+	}
+
+	return items
 }
 
 func badges(eps []*tv.Episode) int {
