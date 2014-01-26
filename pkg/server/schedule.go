@@ -100,6 +100,7 @@ type indexGroupItem struct {
 	Type    string
 	Title   string
 	AirDate string
+	Link    string
 }
 
 type airDateSorter struct {
@@ -149,8 +150,8 @@ func (self *ScheduleHandler) upcoming(w http.ResponseWriter, r *http.Request) {
 	page := indexPage{Title: "Upcoming Episodes"}
 	for series, eps := range groupBySeries(self.sched.Episodes) {
 		group := indexGroup{
-			Title:      series,
-			Episodes:   filterUpcoming(eps),
+			Title:    series,
+			Episodes: filterUpcoming(eps),
 		}
 
 		if group.BadgeCount > 0 {
@@ -175,8 +176,8 @@ func groupBySeries(eps []*tv.Episode) map[string][]*tv.Episode {
 
 func filterUpcoming(eps []*tv.Episode) []indexGroupItem {
 	items := make([]indexGroupItem, 0)
-	cutoff :=  today()
-	
+	cutoff := today()
+
 	for _, ep := range byDate(eps) {
 		if ep.AirDate.After(cutoff) {
 			items = append(items, indexGroupItem{
@@ -188,6 +189,21 @@ func filterUpcoming(eps []*tv.Episode) []indexGroupItem {
 	}
 
 	return items
+}
+
+var watchLinks = map[string]string{
+	"Castle":                "http://www.hulu.com/profile/queue",
+	"How I Met Your Mother": "http://www.cbs.com/shows/how_i_met_your_mother/",
+	"New Girl":              "http://www.hulu.com/profile/queue",
+	"The Blacklist":         "http://www.hulu.com/profile/queue",
+	"The Mentalist":         "http://www.cbs.com/shows/the_mentalist/video/",
+}
+
+func link(series string) string {
+	if link, ok := watchLinks[series]; ok {
+		return link
+	}
+	return "#"
 }
 
 func unwatched(eps []*tv.Episode, maxUpcoming int) []indexGroupItem {
@@ -206,6 +222,7 @@ func unwatched(eps []*tv.Episode, maxUpcoming int) []indexGroupItem {
 			Type:    fmt.Sprintf("S%d : Ep. %d", ep.Season, ep.Number),
 			Title:   ep.Title,
 			AirDate: ep.AirDate.Format("01/02/2006"),
+			Link:    link(ep.Series),
 		})
 	}
 
