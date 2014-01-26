@@ -13,7 +13,7 @@
 	</thead>
 	<tbody>
 	  {{range .Episodes}}
-	  <tr><td>{{.Type}}</td><td>{{.Title}}</td><td>{{.AirDate}}</td>
+	  <tr><td>{{.Type}}</td><td><a href="{{.Link}}" target="_blank">{{.Title}}</a></td><td>{{.AirDate}}</td>
 	    <td><span class="glyphicon glyphicon-remove"></span></td></tr>
 	  {{end}}
 	<tbody>
