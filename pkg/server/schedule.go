@@ -24,6 +24,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"time"
 
 	"github.com/mikelaspina/firstrun/pkg/tv"
@@ -48,6 +49,7 @@ func (self *ScheduleHandler) Init() error {
 	var err error
 
 	self.t, err = template.ParseFiles(
+		"templates/upcoming.html",
 		"templates/schedule.html",
 		"templates/schedule-show-group.html")
 	if err != nil {
@@ -74,7 +76,12 @@ func (h *ScheduleHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.index(w, r)
+	switch r.URL.Path {
+	case "/upcoming":
+		h.upcoming(w, r)
+	default:
+		h.index(w, r)
+	}
 }
 
 type indexPage struct {
@@ -93,28 +100,68 @@ type indexGroupItem struct {
 	Type    string
 	Title   string
 	AirDate string
+	Link    string
+}
+
+type airDateSorter struct {
+	Episodes []*tv.Episode
+}
+
+func (self airDateSorter) Len() int {
+	return len(self.Episodes)
+}
+
+func (self airDateSorter) Less(i, j int) bool {
+	return self.Episodes[i].AirDate.Before(self.Episodes[j].AirDate)
+}
+
+func (self airDateSorter) Swap(i, j int) {
+	self.Episodes[i], self.Episodes[j] = self.Episodes[j], self.Episodes[i]
+}
+
+func byDate(eps []*tv.Episode) []*tv.Episode {
+	s := airDateSorter{eps}
+	sort.Sort(s)
+	return s.Episodes
 }
 
 func (self *ScheduleHandler) index(w http.ResponseWriter, r *http.Request) {
 	page := indexPage{Title: "TV Schedule"}
 	for series, eps := range groupBySeries(self.sched.Episodes) {
-		group := indexGroup{Title: series}
-		for _, ep := range eps {
-			item := indexGroupItem{
-				Type:    fmt.Sprintf("S%d : Ep. %d", ep.Season, ep.Number),
-				Title:   ep.Title,
-				AirDate: ep.AirDate.Format("01/02/2006"),
-			}
-			group.Episodes = append(group.Episodes, item)
+		group := indexGroup{
+			Title:      series,
+			Episodes:   unwatched(eps, 0),
+			BadgeCount: badges(eps),
 		}
-		group.BadgeCount = badges(eps)
+
 		if group.BadgeCount > 0 {
 			group.ShowBadge = true
 		}
+
 		page.Series = append(page.Series, group)
 	}
 
 	if err := self.t.ExecuteTemplate(w, "schedule", page); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (self *ScheduleHandler) upcoming(w http.ResponseWriter, r *http.Request) {
+	page := indexPage{Title: "Upcoming Episodes"}
+	for series, eps := range groupBySeries(self.sched.Episodes) {
+		group := indexGroup{
+			Title:    series,
+			Episodes: filterUpcoming(eps),
+		}
+
+		if group.BadgeCount > 0 {
+			group.ShowBadge = true
+		}
+
+		page.Series = append(page.Series, group)
+	}
+
+	if err := self.t.ExecuteTemplate(w, "upcoming", page); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -125,6 +172,61 @@ func groupBySeries(eps []*tv.Episode) map[string][]*tv.Episode {
 		groups[ep.Series] = append(groups[ep.Series], ep)
 	}
 	return groups
+}
+
+func filterUpcoming(eps []*tv.Episode) []indexGroupItem {
+	items := make([]indexGroupItem, 0)
+	cutoff := today()
+
+	for _, ep := range byDate(eps) {
+		if ep.AirDate.After(cutoff) {
+			items = append(items, indexGroupItem{
+				Type:    fmt.Sprintf("S%d : Ep. %d", ep.Season, ep.Number),
+				Title:   ep.Title,
+				AirDate: ep.AirDate.Format("01/02/2006"),
+			})
+		}
+	}
+
+	return items
+}
+
+var watchLinks = map[string]string{
+	"Castle":                "http://www.hulu.com/profile/queue",
+	"How I Met Your Mother": "http://www.cbs.com/shows/how_i_met_your_mother/",
+	"New Girl":              "http://www.hulu.com/profile/queue",
+	"The Blacklist":         "http://www.hulu.com/profile/queue",
+	"The Mentalist":         "http://www.cbs.com/shows/the_mentalist/video/",
+}
+
+func link(series string) string {
+	if link, ok := watchLinks[series]; ok {
+		return link
+	}
+	return "#"
+}
+
+func unwatched(eps []*tv.Episode, maxUpcoming int) []indexGroupItem {
+	items := make([]indexGroupItem, 0)
+	cutoff := today()
+	upcoming := 0
+	for _, ep := range byDate(eps) {
+		if ep.AirDate.After(cutoff) {
+			if upcoming >= maxUpcoming {
+				break
+			}
+			upcoming += 1
+		}
+
+		items = append(items, indexGroupItem{
+			Type:    fmt.Sprintf("S%d : Ep. %d", ep.Season, ep.Number),
+			Title:   ep.Title,
+			AirDate: ep.AirDate.Format("01/02/2006"),
+			Link:    link(ep.Series),
+		})
+	}
+
+	return items
 }
 
 func badges(eps []*tv.Episode) int {

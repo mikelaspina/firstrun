@@ -1,4 +1,4 @@
-{{define "schedule"}}<!DOCTYPE html>
+{{define "upcoming"}}<!DOCTYPE html>
 <html lang="en">
   <head>
     <title>{{.Title}}</title>
@@ -23,15 +23,15 @@
 
       <div class="navbar-collapse collapse">
         <ul class="nav navbar-nav">
-	  <li class="active"><a href="/queue">Queue</a></li>
-	  <li><a href="/upcoming">Upcoming</a></li>
+	  <li><a href="/queue">Queue</a></li>
+	  <li class="active"><a href="/upcoming">Upcoming</a></li>
 	</ul>
       </div>
     </nav>
 
     <div class="container">
-      <div class="page-header"><h1>Unwatched Episodes</h1></div>
-
+      <div class="page-header"><h1>Upcoming Episodes</h1></div>
+      
       <div class="list-group">
 	{{range .Series}}{{template "schedule-show-group" .}}{{end}}
       </div>

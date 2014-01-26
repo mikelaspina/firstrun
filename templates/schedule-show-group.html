@@ -7,11 +7,13 @@
     <div class="media-body">
       <table class="table">
 	<thead>
-	  <tr><td>Type</td><td>Title</td><td>Air Date</td><td>Actions</td></tr>
+	  <tr><td class="episode-type">Type</td><td class="episode-title">Title</td>
+	    <td class="episode-date">Air Date</td>
+	    <td class="episode-actions">Actions</td></tr>
 	</thead>
 	<tbody>
 	  {{range .Episodes}}
-	  <tr><td>{{.Type}}</td><td>{{.Title}}</td><td>{{.AirDate}}</td>
+	  <tr><td>{{.Type}}</td><td><a href="{{.Link}}" target="_blank">{{.Title}}</a></td><td>{{.AirDate}}</td>
 	    <td><span class="glyphicon glyphicon-remove"></span></td></tr>
 	  {{end}}
 	<tbody>
